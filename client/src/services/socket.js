@@ -6,8 +6,24 @@ let socket = null;
 
 export const initSocket = () => {
   if (!socket) {
+    const token = localStorage.getItem('authToken'); // Retrieve the JWT token from localStorage
+
     socket = io(SOCKET_URL, {
-      autoConnect: true
+      autoConnect: true,
+      auth: {
+        token // Pass the token for authentication
+      }
+    });
+
+    // Handle authentication errors
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+      if (err.message === 'Unauthorized') {
+        alert('Authentication failed. Please log in again.');
+        localStorage.removeItem('authToken'); // Clear invalid token
+        socket.disconnect();
+        socket = null;
+      }
     });
   }
   return socket;

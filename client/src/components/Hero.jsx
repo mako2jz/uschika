@@ -1,77 +1,75 @@
-import React from 'react';
-import { gsap } from "gsap";
+import React, { useState } from 'react';
 import AnimatedContent from './AnimatedContent';
-import PixelBlast from './PixelBlast';
+import Squares from './Squares';
+import axios from 'axios';
 
 function Hero() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/auth/magic-link', { email });
+      setMessage(response.data.message || 'Magic link sent successfully!');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Failed to send magic link.');
+    }
+  };
+
   return (
     <div className="hero">
       {/* PixelBlast as the background */}
       <div className="hero-background">
-        <PixelBlast
-          variant="circle"
-          pixelSize={6}
-          color="#7ed957"
-          patternScale={3}
-          patternDensity={1.2}
-          pixelSizeJitter={0.5}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid
-          liquidStrength={0.12}
-          liquidRadius={1.2}
-          liquidWobbleSpeed={5}
-          speed={0.6}
-          edgeFade={0.25}
-          transparent
+        <Squares 
+          speed={0.2} 
+          squareSize={40}
+          direction="diagonal" // up, down, left, right, diagonal
+          borderColor="#5a9b3e"
+          hoverFillColor="#222"
         />
       </div>
 
       {/* Hero content */}
       <div className="hero-container">
         <AnimatedContent
-            distance={100}
-            direction="vertical"
-            reverse={false}
-            duration={0.8}
-            ease="power3.out"
-            initialOpacity={0}
-            animateOpacity
-            scale={1}
-            threshold={0.1}
-            delay={0.3}
-          >
-            <div className="hero-logo">
-                <img src="src/assets/logo.png" alt="USChika Logo" />
-            </div>
+          distance={100}
+          direction="vertical"
+          reverse={false}
+          duration={0.8}
+          ease="power3.out"
+          initialOpacity={0}
+          animateOpacity
+          scale={1}
+          threshold={0.1}
+          delay={0.3}
+        >
+          <div className="hero-logo">
+            <img src="src/assets/logo.png" alt="USChika Logo" />
+          </div>
         </AnimatedContent>
         <div className="hero-content">
-            <p className="hero-description">
-              Anonymous one-on-one chat with fellow students
-            </p>
-            <form className="hero-form">
-              <input
-                type="email"
-                className="hero-input"
-                placeholder="USC Email"
-                required
-              />
-              <input
-                type="password"
-                className="hero-input"
-                placeholder="Your Password"
-                required
-              />
-              <button type="submit" className="hero-button">
-                Start Chatting
-              </button>
-            </form>
-            <p className="hero-note">
-              <strong>Remember:</strong> Be respectful and kind. All chats are
-              anonymous but follow school guidelines.
-            </p>
+          <p className="hero-description">
+            Anonymous one-on-one chat with fellow students
+          </p>
+          <form className="hero-form" onSubmit={handleSubmit}>
+            <input
+              type="email"
+              className="hero-input"
+              placeholder="Enter your USC Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <button type="submit" className="hero-button">
+              Send Magic Link
+            </button>
+          </form>
+          {message && <p className="hero-message">{message}</p>}
+          <p className="hero-note">
+            <strong>Remember:</strong> Be respectful and kind. All chats are
+            anonymous but follow school guidelines.
+          </p>
         </div>
       </div>
     </div>
