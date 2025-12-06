@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* General Reset */
+.lexend-body {
+  font-family: "Lexend", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  font-family: "Lexend", sans-serif;
+  background: #121212; /* Dark background */
+  color: #e0e0e0; /* Light text color */
+}
+
+/* Hero Component Styles */
+.hero {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.hero-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* Space between logo and content */
+  position: relative;
+  z-index: 1; /* Ensure content is above the background */
+}
+
+.hero-logo img {
+  width: 400px;
+}
+
+.hero-content {
+  text-align: left; /* Align text to the left */
+  background: rgba(30, 30, 30, 0.9);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.hero-description {
+  font-size: 1rem;
+  color: #b0b0b0;
+  margin-bottom: 1.5rem;
+}
+
+.hero-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero-input {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.hero-button {
+  padding: 0.75rem;
+  font-size: 1rem;
+  color: #fff;
+  background: #7ed957;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.hero-button:hover {
+  background: #5a9b3e;
+}
+
+.hero-note {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #b0b0b0;
+}

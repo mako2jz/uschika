@@ -3,6 +3,7 @@ import useChatStore from './store/chatStore';
 import { getSocket } from './services/socket';
 import SearchScreen from './components/SearchScreen';
 import ChatWindow from './components/ChatWindow';
+import Hero from './components/Hero';
 
 function App() {
   const { connected, setConnected, isMatched, setMatched, setSearching, addMessage, setPartnerConnected, resetChat } = useChatStore();
@@ -68,7 +69,7 @@ function App() {
 
   return (
     <div className="App">
-      {!isMatched ? <SearchScreen /> : <ChatWindow />}
+      <Hero />
     </div>
   );
 }
