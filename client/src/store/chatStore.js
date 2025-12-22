@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
 const useChatStore = create((set) => ({
+  // User state
+  user: null,
+  setUser: (user) => set({ user }),
+
   // Connection state
   connected: false,
   setConnected: (connected) => set({ connected }),
@@ -23,8 +27,19 @@ const useChatStore = create((set) => ({
   partnerConnected: true,
   setPartnerConnected: (partnerConnected) => set({ partnerConnected }),
 
-  // Reset all state
+  // Reset chat-specific state
   resetChat: () => set({
+    isSearching: false,
+    isMatched: false,
+    roomId: null,
+    messages: [],
+    partnerConnected: true
+  }),
+
+  // Add a full logout reset
+  logout: () => set({
+    user: null,
+    connected: false,
     isSearching: false,
     isMatched: false,
     roomId: null,

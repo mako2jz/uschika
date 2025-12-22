@@ -27,7 +27,7 @@ const SearchScreen = () => {
             <div>
               <button
                 onClick={handleSearch}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="hero-button"
               >
                 Find a Chat Partner
               </button>
@@ -47,7 +47,7 @@ const SearchScreen = () => {
               </div>
               <button
                 onClick={handleStopSearch}
-                className="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-all duration-300"
+                className="hero-button"
               >
                 Cancel Search
               </button>

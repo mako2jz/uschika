@@ -29,6 +29,7 @@ const io = new Server(httpServer, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/assets', express.static('assets'));
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/uschika';
@@ -75,38 +76,48 @@ io.on('connection', (socket) => {
 
   // Authenticate user
   socket.on('login', async ({ token }) => {
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    socket.emit('unauthorized');
-    socket.disconnect();
-    return;
-  }
-
-  try {
-    // Check if user exists
-    let user = await User.findOne({ email: decoded.email });
-    if (!user) {
-      user = await User.create({ email: decoded.email, displayName: decoded.displayName || '' });
+    const userData = verifyToken(token);
+    if (!userData) {
+      socket.emit('unauthorized');
+      return socket.disconnect();
     }
 
-    socket.userId = user._id;
-    socket.emit('loginSuccess', { userId: user._id, displayName: user.displayName });
-    console.log(`User logged in: ${user.email}`);
-  } catch (error) {
-    console.error('Error during login:', error);
-    socket.emit('error', { message: 'Internal server error during login.' });
-    socket.disconnect();
-  }
+    try {
+      // Find or create user in the database
+      let user = await User.findOne({ email: userData.email });
+      if (!user) {
+        user = new User({ email: userData.email, displayName: userData.displayName });
+        await user.save();
+      }
+
+      // Store user info on the socket object for later use
+      socket.user = user;
+      console.log(`User ${user.displayName} authenticated with socket ${socket.id}`);
+
+      // Confirm successful login to the client
+      socket.emit('loginSuccess', {
+        user: {
+          id: user._id,
+          displayName: user.displayName,
+          email: user.email
+        }
+      });
+
+    } catch (error) {
+      console.error('Error during login process:', error);
+      socket.emit('unauthorized');
+      socket.disconnect();
+    }
   });
 
   // Handle search for partner
   socket.on('search', () => {
-    if (!socket.userId) {
+    if (!socket.user) {
       socket.emit('unauthorized');
       return;
     }
 
-    console.log('User searching:', socket.userId);
+    console.log('User searching:', socket.user.displayName);
 
     // Check for available partner
     if (waitingUsers.length > 0) {
@@ -122,11 +133,11 @@ io.on('connection', (socket) => {
       // Notify both users
       socket.emit('matched', { roomId });
       partnerSocket.emit('matched', { roomId });
-      console.log(`Matched ${socket.userId} with ${partnerSocket.userId} in ${roomId}`);
+      console.log(`Matched ${socket.user.displayName} with ${partnerSocket.user.displayName} in ${roomId}`);
     } else {
       waitingUsers.push(socket);
       socket.emit('searching');
-      console.log('User added to waiting queue:', socket.userId);
+      console.log('User added to waiting queue:', socket.user.displayName);
     }
   });
 
@@ -135,21 +146,21 @@ io.on('connection', (socket) => {
     const index = waitingUsers.findIndex(s => s.id === socket.id);
     if (index !== -1) waitingUsers.splice(index, 1);
     socket.emit('searchStopped');
-    console.log('User stopped searching:', socket.userId);
+    console.log('User stopped searching:', socket.user?.displayName);
   });
 
   // Send message
   socket.on('sendMessage', async ({ content }) => {
     const chatInfo = activeChats.get(socket.id);
-    if (chatInfo) {
-      const { roomId, partnerId } = chatInfo;
+    if (chatInfo && socket.user) {
+      const { roomId } = chatInfo;
 
-      // Save message in DB (optional)
-      await Message.create({ roomId, sender: socket.userId, content });
+      // Save message in DB
+      await Message.create({ roomId, sender: socket.user._id, content });
 
       // Emit to partner
       socket.to(roomId).emit('receiveMessage', {
-        sender: socket.userId,
+        sender: socket.user._id,
         content,
         timestamp: Date.now()
       });
@@ -234,8 +245,78 @@ app.post('/auth/magic-link', async (req, res) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Your Magic Link for USChika',
-      html: `<p>Click the link below to log in:</p><a href="${magicLink}">${magicLink}</a>`
+      subject: 'USChika Magic Link',
+      html: `<body style="margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+    <tr>
+      <td align="center">
+        <!-- White Box -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:420px; background-color:#ffffff; border-radius:8px; padding:32px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <img 
+                src="http://localhost:5000/assets/logo.png" 
+                alt="Logo" 
+                width="96" 
+                height="96" 
+                style="display:block; border-radius:8px; object-fit:contain;"
+              />
+            </td>
+          </tr>
+
+          <!-- Message -->
+          <tr>
+            <td align="center" style="padding-bottom:20px; color:#333333; font-size:16px;">
+              Click the button below to log in:
+            </td>
+          </tr>
+
+          <!-- Magic Link Button -->
+          <tr>
+            <td align="center" style="padding-bottom:28px;">
+              <a 
+                href="${magicLink}" 
+                style="
+                  display:inline-block;
+                  padding:12px 24px;
+                  background-color:#7ed957;
+                  color:#ffffff;
+                  text-decoration:none;
+                  border-radius:6px;
+                  font-size:15px;
+                  font-weight:600;
+                "
+              >
+                Log In
+              </a>
+            </td>
+          </tr>
+
+          <!-- Fallback Link -->
+          <tr>
+            <td align="center" style="padding-bottom:24px; font-size:13px; color:#666666;">
+              Or copy and paste this link into your browser:<br />
+              <a href="${magicLink}" style="color:#000000; word-break:break-all;">
+                ${magicLink}
+              </a>
+            </td>
+          </tr>
+
+          <!-- Disclaimer -->
+          <tr>
+            <td align="center" style="font-size:12px; color:#999999; line-height:1.5;">
+              If you did not request this login link, you can safely ignore this email.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+`
     });
 
     res.status(200).json({ message: 'Magic link sent successfully.' });
