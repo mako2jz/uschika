@@ -119,9 +119,14 @@ io.on('connection', (socket) => {
 
     console.log('User searching:', socket.user.displayName);
 
-    // Check for available partner
-    if (waitingUsers.length > 0) {
-      const partnerSocket = waitingUsers.shift();
+    // Find a partner with a different email address
+    const partnerIndex = waitingUsers.findIndex(
+      (waitingSocket) => waitingSocket.user.email !== socket.user.email
+    );
+
+    if (partnerIndex !== -1) {
+      // A suitable partner was found, remove them from the queue
+      const [partnerSocket] = waitingUsers.splice(partnerIndex, 1);
 
       const roomId = `room-${socket.id}-${partnerSocket.id}`;
       socket.join(roomId);
@@ -135,7 +140,10 @@ io.on('connection', (socket) => {
       partnerSocket.emit('matched', { roomId });
       console.log(`Matched ${socket.user.displayName} with ${partnerSocket.user.displayName} in ${roomId}`);
     } else {
-      waitingUsers.push(socket);
+      // No suitable partner found. Add the current user to the queue if they aren't already in it.
+      if (!waitingUsers.some(s => s.id === socket.id)) {
+        waitingUsers.push(socket);
+      }
       socket.emit('searching');
       console.log('User added to waiting queue:', socket.user.displayName);
     }
@@ -148,23 +156,30 @@ io.on('connection', (socket) => {
     socket.emit('searchStopped');
     console.log('User stopped searching:', socket.user?.displayName);
   });
-
   // Send message
   socket.on('sendMessage', async ({ content }) => {
     const chatInfo = activeChats.get(socket.id);
-    if (chatInfo && socket.user) {
+    // Add a validation check to ensure content is a non-empty string
+    if (chatInfo && socket.user && typeof content === 'string' && content.trim() !== '') {
       const { roomId } = chatInfo;
 
-      // Save message in DB
-      await Message.create({ roomId, sender: socket.user._id, content });
+      try {
+        // Save message in DB
+        await Message.create({ roomId, sender: socket.user._id, content });
 
-      // Emit to partner
-      socket.to(roomId).emit('receiveMessage', {
-        sender: socket.user._id,
-        content,
-        timestamp: Date.now()
-      });
-      console.log(`Message sent in room ${roomId}`);
+        // Emit to partner
+        socket.to(roomId).emit('receiveMessage', {
+          sender: socket.user._id,
+          content,
+          timestamp: Date.now()
+        });
+        console.log(`Message sent in room ${roomId}`);
+      } catch (error) {
+        console.error('Error saving or sending message:', error);
+      }
+    } else {
+      // Log an error if the payload is invalid, but do not crash
+      console.error(`Received invalid sendMessage event from socket ${socket.id}. Content:`, content);
     }
   });
 

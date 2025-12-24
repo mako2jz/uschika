@@ -49,6 +49,10 @@ body {
   width: 400px;
 }
 
+.search-logo img {
+  width: 300px;
+}
+
 .hero-content {
   text-align: left; /* Align text to the left */
   background: rgba(30, 30, 30, 0.9);

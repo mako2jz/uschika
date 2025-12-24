@@ -2,18 +2,41 @@ import React, { useState } from 'react';
 import AnimatedContent from './AnimatedContent';
 import Squares from './Squares';
 import axios from 'axios';
+import logo from '../assets/logo.png';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Hero() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateEmail = (email) => {
+    // Basic email format validation + domain check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.endsWith('@usc.edu.ph');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation before sending
+    if (!validateEmail(email)) {
+      setMessage('Please enter a valid @usc.edu.ph email address.');
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('');
+
     try {
-      const response = await axios.post('http://localhost:5000/auth/magic-link', { email });
+      const response = await axios.post(`${API_URL}/auth/magic-link`, { email });
       setMessage(response.data.message || 'Magic link sent successfully!');
+      setEmail(''); // Clear email after successful submission
     } catch (error) {
       setMessage(error.response?.data?.error || 'Failed to send magic link.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -24,7 +47,7 @@ function Hero() {
         <Squares 
           speed={0.2} 
           squareSize={40}
-          direction="diagonal" // up, down, left, right, diagonal
+          direction="diagonal"
           borderColor="#5a9b3e"
           hoverFillColor="#222"
         />
@@ -45,7 +68,7 @@ function Hero() {
           delay={0.3}
         >
           <div className="hero-logo">
-            <img src="src/assets/logo.png" alt="USChika Logo" />
+            <img src={logo} alt="USChika Logo" />
           </div>
         </AnimatedContent>
         <div className="hero-content">
@@ -60,12 +83,18 @@ function Hero() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              disabled={isLoading}
             />
-            <button type="submit" className="hero-button">
-              Send Magic Link
+            <button type="submit" className="hero-button" disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Send Magic Link'}
             </button>
           </form>
-          {message && <p className="hero-message">{message}</p>}
+          {message && (
+            <p className={`hero-message ${message.includes('Failed') || message.includes('Please enter') ? 'error' : ''}`}>
+              {message}
+            </p>
+          )}
           <p className="hero-note">
             <strong>Remember:</strong> Be respectful and kind. All chats are
             anonymous but follow school guidelines.

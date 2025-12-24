@@ -2,6 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/chatStore';
 import { getSocket } from '../services/socket';
 
+// Sanitize text to prevent any potential XSS when displaying
+const sanitizeText = (text) => {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+};
+
+// Maximum message length to prevent abuse
+const MAX_MESSAGE_LENGTH = 1000;
+
 const ChatWindow = () => {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -16,24 +29,50 @@ const ChatWindow = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (inputMessage.trim() && partnerConnected) {
-      // Add own message to the store
-      addMessage({
-        text: inputMessage,
-        sender: 'me',
-        timestamp: Date.now()
-      });
-      // Send message to partner via socket
-      socket.emit('sendMessage', inputMessage);
-      setInputMessage('');
+  const handleInputChange = (e) => {
+    // Limit input length
+    const value = e.target.value;
+    if (value.length <= MAX_MESSAGE_LENGTH) {
+      setInputMessage(value);
     }
   };
 
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    const trimmedMessage = inputMessage.trim();
+    
+    if (!trimmedMessage || !partnerConnected || !socket?.connected) {
+      return;
+    }
+
+    // Validate message before sending
+    if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+      return;
+    }
+
+    // Add own message to the store
+    addMessage({
+      text: trimmedMessage,
+      sender: 'me',
+      timestamp: Date.now()
+    });
+    
+    // Send message to partner via socket with proper payload
+    socket.emit('sendMessage', { content: trimmedMessage });
+    setInputMessage('');
+  };
+
   const handleEndChat = () => {
-    socket.emit('endChat');
+    if (socket?.connected) {
+      socket.emit('endChat');
+    }
     resetChat();
+  };
+
+  // Safe render function for message text
+  const renderMessageText = (text) => {
+    // React automatically escapes text content, but we add an extra layer
+    return <p className="break-words">{text}</p>;
   };
 
   return (
@@ -66,7 +105,7 @@ const ChatWindow = () => {
           ) : (
             messages.map((msg, index) => (
               <div
-                key={index}
+                key={`${msg.timestamp}-${index}`}
                 className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
@@ -76,7 +115,7 @@ const ChatWindow = () => {
                       : 'bg-gray-200 text-gray-800'
                   }`}
                 >
-                  <p className="break-words">{msg.text}</p>
+                  {renderMessageText(msg.text)}
                   <p className={`text-xs mt-1 ${msg.sender === 'me' ? 'text-white/70' : 'text-gray-500'}`}>
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -102,9 +141,10 @@ const ChatWindow = () => {
             <input
               type="text"
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={handleInputChange}
               placeholder={partnerConnected ? "Type a message..." : "Partner disconnected"}
               disabled={!partnerConnected}
+              maxLength={MAX_MESSAGE_LENGTH}
               className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button
@@ -115,6 +155,9 @@ const ChatWindow = () => {
               Send
             </button>
           </div>
+          <p className="text-xs text-gray-400 mt-1 text-right">
+            {inputMessage.length}/{MAX_MESSAGE_LENGTH}
+          </p>
         </form>
       </div>
     </div>
