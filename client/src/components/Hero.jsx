@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AnimatedContent from './AnimatedContent';
 import Squares from './Squares';
+import PolicyModal from './PolicyModal';
 import axios from 'axios';
 import logo from '../assets/logo.png';
 
@@ -10,6 +11,7 @@ function Hero() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
 
   const validateEmail = (email) => {
     // Basic email format validation + domain check
@@ -42,7 +44,7 @@ function Hero() {
 
   return (
     <div className="hero">
-      {/* PixelBlast as the background */}
+      {/* Squares as the background */}
       <div className="hero-background">
         <Squares 
           speed={0.2} 
@@ -99,8 +101,17 @@ function Hero() {
             <strong>Remember:</strong> Be respectful and kind. All chats are
             anonymous but follow school guidelines.
           </p>
+          <div className="mt-4 text-center">
+            <button 
+              onClick={() => setShowPolicy(true)}
+              className="hero-button"
+            >
+              Terms of Service & Privacy Policy
+            </button>
+          </div>
         </div>
       </div>
+      <PolicyModal isOpen={showPolicy} onClose={() => setShowPolicy(false)} />
     </div>
   );
 }
