@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { initSocket } from '../services/socket';
+import useChatStore from '../store/chatStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -8,6 +10,7 @@ const AuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState('');
+  const { setConnected, setMatched, setSearching, addMessage, setPartnerConnected, setUser } = useChatStore();
 
   useEffect(() => {
     const verifyAndStoreToken = async () => {
@@ -29,6 +32,54 @@ const AuthCallback = () => {
           localStorage.setItem('authToken', token);
           // Clear the token from URL for security
           window.history.replaceState({}, document.title, '/auth');
+          
+          // Initialize socket after token is stored
+          const socket = initSocket();
+          
+          if (socket) {
+            socket.on('loginSuccess', (data) => {
+              console.log('Login successful, user data received:', data.user);
+              setUser(data.user);
+            });
+
+            socket.on('connect', () => {
+              console.log('Connected to server');
+              setConnected(true);
+            });
+
+            socket.on('disconnect', () => {
+              console.log('Disconnected from server');
+              setConnected(false);
+            });
+
+            socket.on('matched', ({ roomId }) => {
+              console.log('Matched! Room:', roomId);
+              setMatched(true, roomId);
+              setSearching(false);
+            });
+
+            socket.on('searchStopped', () => {
+              console.log('Search stopped');
+              setSearching(false);
+            });
+
+            socket.on('receiveMessage', (message) => {
+              console.log('Message received:', message.content);
+              addMessage({
+                text: message.content,
+                sender: 'partner',
+                timestamp: message.timestamp
+              });
+            });
+
+            socket.on('partnerDisconnected', () => {
+              console.log('Partner disconnected');
+              setPartnerConnected(false);
+            });
+
+            socket.connect();
+          }
+          
           navigate('/chat');
         } else {
           setError('Invalid token. Please request a new magic link.');
@@ -43,7 +94,7 @@ const AuthCallback = () => {
     };
 
     verifyAndStoreToken();
-  }, [location.search, navigate]);
+  }, [location.search, navigate, setConnected, setMatched, setSearching, addMessage, setPartnerConnected, setUser]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">

@@ -76,8 +76,8 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[600px] flex flex-col">
+    <div className="h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-full flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 rounded-t-lg flex justify-between items-center">
           <div>
@@ -88,7 +88,7 @@ const ChatWindow = () => {
           </div>
           <button
             onClick={handleEndChat}
-            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-300 font-medium"
+            className="hero-button"
           >
             End Chat
           </button>
@@ -137,7 +137,7 @@ const ChatWindow = () => {
 
         {/* Input Area */}
         <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-4">
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 flex justify-center">
             <input
               type="text"
               value={inputMessage}
@@ -145,12 +145,12 @@ const ChatWindow = () => {
               placeholder={partnerConnected ? "Type a message..." : "Partner disconnected"}
               disabled={!partnerConnected}
               maxLength={MAX_MESSAGE_LENGTH}
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="hero-input flex-1"
             />
             <button
               type="submit"
               disabled={!inputMessage.trim() || !partnerConnected}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium"
+              className="hero-button"
             >
               Send
             </button>

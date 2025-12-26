@@ -5,7 +5,7 @@ const PolicyModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
-      <div className="bg-[#1e1e1e] text-gray-200 rounded-lg shadow-xl max-w-xl max-h-[90vh] overflow-y-auto font-sans">
+      <div className="bg-[#1e1e1e] text-gray-200 rounded-lg shadow-xl max-w-[80vh] max-h-[90vh] overflow-y-auto font-sans">
         <div className="p-6 space-y-6">
           <div className="flex justify-between items-start">
             <h2 className="text-2xl font-bold text-white">Terms of Service & Privacy Policy</h2>

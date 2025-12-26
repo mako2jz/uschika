@@ -99,6 +99,12 @@ body {
   background: #5a9b3e;
 }
 
+.hero-button:disabled {
+  background: #4a4a4a;
+  color: #a0a0a0;
+  cursor: not-allowed;
+}
+
 .hero-note {
   margin-top: 1rem;
   font-size: 0.875rem;

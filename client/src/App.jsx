@@ -5,7 +5,7 @@ import AuthCallback from './pages/AuthCallback';
 import SearchScreen from './components/SearchScreen';
 import ChatWindow from './components/ChatWindow';
 import { useEffect } from 'react';
-import { initSocket } from './services/socket';
+import { getSocket, initSocket } from './services/socket';
 
 // This component protects routes that require a user to be logged in.
 const PrivateRoute = ({ children }) => {
@@ -18,19 +18,29 @@ function App() {
   const { isMatched, setConnected, setMatched, setSearching, addMessage, setPartnerConnected, setUser } = useChatStore();
 
   useEffect(() => {
-    // Attempt to initialize the socket if a token exists on page load or after login.
     const token = localStorage.getItem('authToken');
     if (token) {
-      const socket = initSocket();
+      // Check if socket already exists and is connected
+      let socket = getSocket();
+      
+      // If socket exists and is already connected, just set up listeners
+      if (socket?.connected) {
+        console.log('Socket already connected, skipping initialization');
+        return;
+      }
+
+      // Initialize socket if needed
+      if (!socket) {
+        socket = initSocket();
+      }
 
       if (socket) {
-        // This listener is now effectively the "login success" handler for the app
+        // ...existing code... (all the socket.on listeners)
         socket.on('loginSuccess', (data) => {
           console.log('Login successful, user data received:', data.user);
-          setUser(data.user); // Store user data in the store
+          setUser(data.user);
         });
 
-        // Global listeners that affect the whole app state
         socket.on('connect', () => {
           console.log('Connected to server');
           setConnected(true);
@@ -41,7 +51,6 @@ function App() {
           setConnected(false);
         });
 
-        // Matchmaking listeners
         socket.on('matched', ({ roomId }) => {
           console.log('Matched! Room:', roomId);
           setMatched(true, roomId);
@@ -53,7 +62,6 @@ function App() {
           setSearching(false);
         });
 
-        // Message listeners
         socket.on('receiveMessage', (message) => {
           console.log('Message received:', message.content);
           addMessage({
@@ -63,16 +71,16 @@ function App() {
           });
         });
 
-        // Partner status listeners
         socket.on('partnerDisconnected', () => {
           console.log('Partner disconnected');
           setPartnerConnected(false);
         });
         
-        // Connect the socket
-        socket.connect();
+        // Only connect if not already connected
+        if (!socket.connected) {
+          socket.connect();
+        }
 
-        // Cleanup on unmount
         return () => {
           socket.off('loginSuccess');
           socket.off('connect');

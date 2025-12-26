@@ -468,17 +468,6 @@ app.post('/auth/magic-link', magicLinkLimiter, async (req, res) => {
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:420px; background-color:#ffffff; border-radius:8px; padding:32px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
           <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <img 
-                src="${process.env.CLIENT_URL}/assets/logo.png" 
-                alt="Logo" 
-                width="96" 
-                height="96" 
-                style="display:block; border-radius:8px; object-fit:contain;"
-              />
-            </td>
-          </tr>
-          <tr>
             <td align="center" style="padding-bottom:20px; color:#333333; font-size:16px;">
               Click the button below to log in:
             </td>
