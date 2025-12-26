@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://uschika.dcism.org';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 let socket = null;
 
@@ -12,7 +12,13 @@ const isValidTokenFormat = (token) => {
 };
 
 export const initSocket = () => {
-  // If a socket instance exists, disconnect it to ensure a fresh connection
+  // If socket exists and is connected, return it
+  if (socket?.connected) {
+    console.log('Socket already connected, reusing existing connection');
+    return socket;
+  }
+
+  // If a socket instance exists but not connected, disconnect it
   if (socket) {
     socket.disconnect();
   }

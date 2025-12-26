@@ -23,7 +23,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'https://uschika.dcism.org',
+    origin: process.env.CLIENT_URL || 'localhost:5173',
     methods: ['GET', 'POST']
   },
   // Add connection rate limiting
@@ -120,8 +120,7 @@ const UserSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Index for faster lookups
-UserSchema.index({ email: 1 });
+// unique: true already creates an index on email
 const User = mongoose.model('User', UserSchema);
 
 const MessageSchema = new mongoose.Schema({

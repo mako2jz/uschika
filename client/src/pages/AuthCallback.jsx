@@ -4,7 +4,7 @@ import axios from 'axios';
 import { initSocket } from '../services/socket';
 import useChatStore from '../store/chatStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://uschika.dcism.org';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -37,14 +37,17 @@ const AuthCallback = () => {
           const socket = initSocket();
           
           if (socket) {
+            // Wait for loginSuccess before navigating
             socket.on('loginSuccess', (data) => {
               console.log('Login successful, user data received:', data.user);
               setUser(data.user);
+              setConnected(true);
+              // Navigate only after successful authentication
+              navigate('/chat');
             });
 
             socket.on('connect', () => {
               console.log('Connected to server');
-              setConnected(true);
             });
 
             socket.on('disconnect', () => {
@@ -77,10 +80,17 @@ const AuthCallback = () => {
               setPartnerConnected(false);
             });
 
+            socket.on('unauthorized', () => {
+              console.log('Unauthorized, redirecting to login');
+              setError('Session expired. Please request a new magic link.');
+              setTimeout(() => navigate('/'), 3000);
+            });
+
             socket.connect();
+          } else {
+            setError('Failed to initialize connection.');
+            setTimeout(() => navigate('/'), 3000);
           }
-          
-          navigate('/chat');
         } else {
           setError('Invalid token. Please request a new magic link.');
           setTimeout(() => navigate('/'), 3000);

@@ -5,7 +5,7 @@ import AuthCallback from './pages/AuthCallback';
 import SearchScreen from './components/SearchScreen';
 import ChatWindow from './components/ChatWindow';
 import { useEffect } from 'react';
-import { getSocket, initSocket } from './services/socket';
+import { getSocket } from './services/socket';
 
 // This component protects routes that require a user to be logged in.
 const PrivateRoute = ({ children }) => {
@@ -20,77 +20,78 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      // Check if socket already exists and is connected
+      // Get existing socket or create new one
       let socket = getSocket();
-      
-      // If socket exists and is already connected, just set up listeners
-      if (socket?.connected) {
-        console.log('Socket already connected, skipping initialization');
+
+      // If no socket could be created, skip
+      if (!socket) {
         return;
       }
 
-      // Initialize socket if needed
-      if (!socket) {
-        socket = initSocket();
+      // Set up listeners (they'll be cleaned up on unmount)
+      const handleLoginSuccess = (data) => {
+        console.log('Login successful, user data received:', data.user);
+        setUser(data.user);
+        setConnected(true);
+      };
+
+      const handleConnect = () => {
+        console.log('Connected to server');
+      };
+
+      const handleDisconnect = () => {
+        console.log('Disconnected from server');
+        setConnected(false);
+      };
+
+      const handleMatched = ({ roomId }) => {
+        console.log('Matched! Room:', roomId);
+        setMatched(true, roomId);
+        setSearching(false);
+      };
+
+      const handleSearchStopped = () => {
+        console.log('Search stopped');
+        setSearching(false);
+      };
+
+      const handleReceiveMessage = (message) => {
+        console.log('Message received:', message.content);
+        addMessage({
+          text: message.content,
+          sender: 'partner',
+          timestamp: message.timestamp
+        });
+      };
+
+      const handlePartnerDisconnected = () => {
+        console.log('Partner disconnected');
+        setPartnerConnected(false);
+      };
+
+      // Only add listeners if not already added (socket might already have them from AuthCallback)
+      socket.off('loginSuccess').on('loginSuccess', handleLoginSuccess);
+      socket.off('connect').on('connect', handleConnect);
+      socket.off('disconnect').on('disconnect', handleDisconnect);
+      socket.off('matched').on('matched', handleMatched);
+      socket.off('searchStopped').on('searchStopped', handleSearchStopped);
+      socket.off('receiveMessage').on('receiveMessage', handleReceiveMessage);
+      socket.off('partnerDisconnected').on('partnerDisconnected', handlePartnerDisconnected);
+      
+      // Only connect if not already connected
+      if (!socket.connected) {
+        socket.connect();
       }
 
-      if (socket) {
-        // ...existing code... (all the socket.on listeners)
-        socket.on('loginSuccess', (data) => {
-          console.log('Login successful, user data received:', data.user);
-          setUser(data.user);
-        });
-
-        socket.on('connect', () => {
-          console.log('Connected to server');
-          setConnected(true);
-        });
-
-        socket.on('disconnect', () => {
-          console.log('Disconnected from server');
-          setConnected(false);
-        });
-
-        socket.on('matched', ({ roomId }) => {
-          console.log('Matched! Room:', roomId);
-          setMatched(true, roomId);
-          setSearching(false);
-        });
-
-        socket.on('searchStopped', () => {
-          console.log('Search stopped');
-          setSearching(false);
-        });
-
-        socket.on('receiveMessage', (message) => {
-          console.log('Message received:', message.content);
-          addMessage({
-            text: message.content,
-            sender: 'partner',
-            timestamp: message.timestamp
-          });
-        });
-
-        socket.on('partnerDisconnected', () => {
-          console.log('Partner disconnected');
-          setPartnerConnected(false);
-        });
-        
-        // Only connect if not already connected
-        if (!socket.connected) {
-          socket.connect();
-        }
-
-        return () => {
-          socket.off('loginSuccess');
-          socket.off('connect');
-          socket.off('disconnect');
-          socket.off('matched');
-          socket.off('searchStopped');
-          socket.off('receiveMessage');
-          socket.off('partnerDisconnected');
-        };
-      }
+      return () => {
+        socket.off('loginSuccess', handleLoginSuccess);
+        socket.off('connect', handleConnect);
+        socket.off('disconnect', handleDisconnect);
+        socket.off('matched', handleMatched);
+        socket.off('searchStopped', handleSearchStopped);
+        socket.off('receiveMessage', handleReceiveMessage);
+        socket.off('partnerDisconnected', handlePartnerDisconnected);
+      };
     }
   }, [setConnected, setMatched, setSearching, addMessage, setPartnerConnected, setUser]);
 
