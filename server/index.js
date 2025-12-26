@@ -547,15 +547,7 @@ app.post('/auth/verify-token', (req, res) => {
   }
 });
 
-// Serve static files from the client build
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
-// Handle client-side routing - serve index.html for all non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-});
-
-// 404 handler
+// 404 handler - this will now only catch unmatched API routes
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

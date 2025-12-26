@@ -5,7 +5,7 @@ import PolicyModal from './PolicyModal';
 import axios from 'axios';
 import logo from '../assets/logo.png';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'https://uschika.dcism.org';
 
 function Hero() {
   const [email, setEmail] = useState('');
