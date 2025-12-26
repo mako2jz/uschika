@@ -4,7 +4,7 @@ import axios from 'axios';
 import { initSocket } from '../services/socket';
 import useChatStore from '../store/chatStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const AuthCallback = () => {
   const navigate = useNavigate();

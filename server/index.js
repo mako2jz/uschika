@@ -8,8 +8,13 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const requiredEnvVars = ['JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASS', 'CLIENT_URL', 'MONGODB_URI'];
 requiredEnvVars.forEach((envVar) => {
@@ -23,7 +28,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL || 'https://uschika.dcism.org',
     methods: ['GET', 'POST']
   },
   // Add connection rate limiting
@@ -49,7 +54,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL,
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -78,7 +83,7 @@ const apiLimiter = rateLimit({
 app.use('/auth', apiLimiter);
 
 // MongoDB connection with improved options
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/uschika';
+const MONGODB_URI = process.env.MONGODB_URI;
 mongoose.connect(MONGODB_URI, {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
@@ -540,6 +545,14 @@ app.post('/auth/verify-token', (req, res) => {
       res.status(401).json({ error: 'Invalid token.' });
     }
   }
+});
+
+// Serve static files from the client build
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// Handle client-side routing - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
 // 404 handler
